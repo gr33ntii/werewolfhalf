@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Test : test">
+
+    <!--<link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css"> -->
+    <title>Ma Sói alo</title>
+  </head>
+
+  <body>
+	<style>
+		.inline {
+			display: inline-block;
+		}
+		
+		.left {
+			float: left;
+		}
+		
+		.right{
+			float: right;
+		}
+		
+		td {
+			padding: 3px;
+		}
+		
+		.capital {
+			text-transform: capitalize;
+		}
+		
+		.hidden {
+			display: none;
+		}
+		
+		.up {
+			vertical-align: top;
+		}
+		
+		#game_div { 
+			padding-right: 50px;
+		}
+		
+		.fine_print {
+			font-size: 75%;
+		}
+		
+	</style>
+  
+  
+	
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<h2>Ma Sói</h2>	
+	<div id="pregame_div">		
+		Người Chơi (dùng dấu phẩy giữa mỗi người): <textarea id="players_text" title="Tên người chơi" class="inline"></textarea>		
+		<table class = "inline">
+			<tr>
+				<td><button id="random_button" title="Nhập tên người chơi rồi">Random Game!</button></td>
+				<td><button id="generate_button" class="inline" title="Nhập tên của người chơi, chọn số lượng vai trò bằng nhau, sau đó nhấp vào nút này để bắt đầu trò chơi!">Generate!</button></td>
+			</tr>			
+		</table>
+		
+		<br><br>	
+		<table id="roles_table" class="inline capital"><tbody><tr><th>Dân Làng</th><th>Dân Làng 2<th>Ma sói Roles</th><th>Roles Thứ Ba</th></tr></tbody></table>		
+	</div>
+	
+	<div id="in_game_div" class="hidden">
+		<button id="reset_button">Reset</button><br>
+		<button id="next_button"></button>
+		<br>
+		<p id="day_counter"></p>
+		<p id="player_status"></p>
+		<!--<div id="timer_div" class="inline">300</div>-->
+		<h3 class="inline">Players</h3>
+		<p class="fine_print inline">(Nhập tên người chơi, để giết)</p><br>		
+		<div id="game_div" class="inline up"></div>
+		<textarea id="note_box" class="inline" cols=30 rows=5>Dùng chỗ này để note</textarea>
+	</div>
+	
+	
+	<script>	
+		var day = "Ngủ";
+		var phase_counter = 1;
+		var day_button_msg = "Dậy";
+		var players_dead = 0;
+		var players_alive;
+		var village_roles = ["Dân", "tiên tri", "tiên tri điên", "nhà tiên tri ngây thơ \t", "aura seer", "apprentice seer", "bảo vệ", "cupid", "diseased", "ma", "thợ săn", "chán đời", "lycan", "phù thủy", "martyr", "mason", "thị trưởng", "old hag", "old man"]
+		var village_roles_2 = ["P.I.", "pacifist", "priest", "prince", "spellcaster", "tough guy", "trouble maker", "cursed", "frankenstein", "grave digger", "gold digger", "gunsmith", "watcher", "tracker", "shirley temple", "bloody mary", "van helsing", "crazed villager", "samurai", "bus driver", "the count", "the mummy", "beholder", "sasquatch", "leprachaun"];
+		var werewolf_roles = ["sói","sói con", "người sói", "minion", "sorcerer", "lone wolf", "kamikaze wolf", "teen wolf", "emma watson", "seer's brother", "mason wolf", "werewolf busdriver", "dream wolf"];
+		var third_party_roles = ["vampire","zombie", "blob", "serial killer", "cult master", "drunk", "doppelganger", "hoodlum", "tanner", "chu chu", "count dracula", "bogeyman"];
+		
+		
+		list_roles();
+		
+		$("#generate_button").click(function(){			
+			$("#game_div").html("");			
+			var players = $("#players_text").val().split(',');
+			for(var i in players)
+				console.log(players[i]);
+			var roles = count_roles();
+			console.log(JSON.stringify(roles));
+			if(roles.length != players.length){
+				if(roles.length > players.length)
+					alert(roles.length - players.length + " more roles than players.");
+				else
+					alert(players.length - roles.length + " more players than roles.");
+			}else{	
+				create_game(players,roles);
+			}
+			
+		});
+		
+		$("#random_button").click(function(){			
+			$("#game_div").html("");			
+			var players = $("#players_text").val().split(',');
+			for(var i in players)
+				console.log(players[i]);
+			var roles = random_roles(players.length);
+			console.log(JSON.stringify(roles));	
+			create_game(players, roles);				
+		});
+		
+		
+		function create_game(players, roles){
+			players_alive = players.length;
+			players = randomize_array(players);
+			for(var i in players){
+				var person = players[i] + ": " + roles[i];
+				$("#game_div").append("<div name='player_div' class ='inline capital up'>"+person+"</div><br>");					
+			}
+			
+			$("div[name='player_div']").click(function(){
+				if($(this).css("text-decoration") == "line-through"){
+					$(this).css({"text-decoration":""});						
+					players_alive++;
+					players_dead--;
+					update_player_status();
+				}
+				else{
+					$(this).css({"text-decoration":"line-through"});						
+					players_dead++;
+					players_alive--;
+					update_player_status();
+				}
+			});
+			
+			$("#in_game_div").toggleClass("hidden");
+			$("#pregame_div").toggleClass("hidden");
+			$("#day_counter").html(day + " " + phase_counter);
+			$("#next_button").html(day_button_msg);		
+			update_player_status();
+			//start_timer();
+		}
+		
+		$("#next_button").click(function(){
+			if(day == "Night"){
+				day = "Day";
+				day_button_msg = "Go to sleep";
+			}
+			else{
+				day = "Night";
+				phase_counter++;
+				day_button_msg = "Wake Up";
+			}
+			
+			update_day_information();			
+			
+		});
+		
+		$("#reset_button").click(function(){
+			reset_elements();			
+			$("#in_game_div").toggleClass("hidden");
+			$("#pregame_div").toggleClass("hidden");
+		});
+		
+		function update_day_information(){
+			$("#day_counter").html(day + " " + phase_counter);
+			$("#next_button").html(day_button_msg);			
+		}
+		
+		function list_roles(){
+			var max_length = (Math.max(village_roles.length, werewolf_roles.length, third_party_roles.length));
+			
+			for(i = 0; i < max_length; i++){
+				var villager = (village_roles[i] != undefined ? village_roles[i] : "");
+				var villager2 = (village_roles_2[i] != undefined ? village_roles_2[i] : "");
+				var werewolf = (werewolf_roles[i] != undefined ? werewolf_roles[i] : "");
+				var third_party = (third_party_roles[i] != undefined ? third_party_roles[i] : "");
+			
+				$("#roles_table tbody").append("<tr>");				
+				$("#roles_table tbody").append(gen_role_html(villager));
+				$("#roles_table tbody").append(gen_role_html(villager2));
+				$("#roles_table tbody").append(gen_role_html(werewolf));
+				$("#roles_table tbody").append(gen_role_html(third_party));
+				$("#roles_table tbody").append("</tr>");
+			}
+		}
+		
+		function gen_role_html(role){			
+			var html = "<td>";
+			if(role != undefined && role != ""){
+				html += "<input name='"+role+"' class='left' type='checkbox'>";
+				html += role;
+				html += "<select name='"+role+"' class='right'>" + 
+				"<option value='1'>1</option><option value='2'>2</option>" +
+				"<option value='3'>3</option><option value='4'>4</option>" +
+				"<option value='5'>5</option><option value='6'>6</option>" +
+				"<option value='7'>7</option><option value='8'>8</option>" +
+				"<option value='9'>9</option><option value='10'>10</option>" +
+				"<option value='11'>11</option><option value='12'>12</option>" +
+				"</select>"; 
+			}
+			
+			html += "</td>";
+			return html;
+			
+		}
+		
+		function count_roles() {
+			var roles = [];
+			var checked_boxes = $("input[type='checkbox']");			
+			for(var i in checked_boxes){								
+				if(!isNaN(i) && $(checked_boxes[i]).get(0).checked == true){										
+					var name = $(checked_boxes[i]).attr('name');					
+					var times = $("select[name='"+name+"']").val();										
+					for(j = 0; j < times; j++){
+						roles.push(name);
+					}
+				}				
+			}			
+			return roles;
+		}
+		
+		function random_roles(village_count){		
+			var roles = get_all_roles();
+			var game_roles = [];
+			for(i = 0; i < village_count; i++){
+				var rand = Math.floor((Math.random()) * roles.length);
+				console.log(rand);
+				game_roles.push(roles[rand]);
+			}
+			
+				
+			return game_roles;
+		}
+		
+		function get_all_roles(){
+			var roles = [];
+			for(var i in village_roles)
+				roles.push(village_roles[i]);
+			for(var i in village_roles_2)
+				roles.push(village_roles_2[i]);	
+			for(var i in werewolf_roles)
+				roles.push(werewolf_roles[i]);
+			for(var i in third_party_roles)
+				roles.push(third_party_roles[i])
+				
+			return roles;
+		}
+		
+		function randomize_array(arr){
+			for(i = 0; i < arr.length; i++){
+				var rand = Math.floor(Math.random()*arr.length);
+				var tmp = arr[i];
+				arr[i] = arr[rand];
+				arr[rand] = tmp;
+			}
+			
+			return arr;
+		}
+		
+		function reset_elements(){
+			day = "Night";
+			phase_counter = 1;
+			day_button_msg = "Wake Up";
+			update_day_information();
+			
+			
+			$("#players_text").val("");			
+			var checked_boxes = $("input[type='checkbox']");			
+			for(var i in checked_boxes){								
+				if(!isNaN(i)){										
+					$(checked_boxes[i]).attr('checked', false);
+				}				
+			}						
+			
+		}
+		
+		function update_player_status(){
+			$("#player_status").html("Players Alive: " + players_alive + "<br> Players Dead: " + players_dead);
+		}
+		
+		/*function start_timer(){
+			window.setInterval(countdown, 1000);
+		}
+		
+		function countdown(){
+			var time = $("#timer_div").html();			
+			time--;
+			$("#timer_div").html(time);
+		}*/
+		//This is fun
+	</script>
+  </body>
+</html>
