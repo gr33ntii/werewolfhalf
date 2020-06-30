@@ -58,8 +58,8 @@
 		Người Chơi (dùng dấu phẩy giữa mỗi người): <textarea id="players_text" title="Tên người chơi" class="inline"></textarea>		
 		<table class = "inline">
 			<tr>
-				<td><button id="random_button" title="Nhập tên người chơi rồi">Random Game!</button></td>
-				<td><button id="generate_button" class="inline" title="Nhập tên của người chơi, chọn số lượng vai trò bằng nhau, sau đó nhấp vào nút này để bắt đầu trò chơi!">Generate!</button></td>
+				<td><button id="random_button" title="Nhập tên người chơi rồi">Tự chọn roles!</button></td>
+				<td><button id="generate_button" class="inline" title="Nhập tên của người chơi, chọn số lượng vai trò bằng nhau, sau đó nhấp vào nút này để bắt đầu trò chơi!">Tạo thủ công!</button></td>
 			</tr>			
 		</table>
 		
@@ -156,14 +156,14 @@
 		}
 		
 		$("#next_button").click(function(){
-			if(day == "Night"){
-				day = "Day";
-				day_button_msg = "Go to sleep";
+			if(day == "Đêm"){
+				day = "Ngày";
+				day_button_msg = "Ngủ";
 			}
 			else{
-				day = "Night";
+				day = "Đêm";
 				phase_counter++;
-				day_button_msg = "Wake Up";
+				day_button_msg = "Dậy";
 			}
 			
 			update_day_information();			
@@ -273,9 +273,9 @@
 		}
 		
 		function reset_elements(){
-			day = "Night";
+			day = "Đêm";
 			phase_counter = 1;
-			day_button_msg = "Wake Up";
+			day_button_msg = "Dậy";
 			update_day_information();
 			
 			
